@@ -1,0 +1,208 @@
+-- Information block for the plugin
+PluginInfo = {
+  Name = "Press and Hold",
+  Version = "1.0",
+  BuildVersion = "1.0.0.0",
+  Id = "dc66736d-c2dd-4b5b-9a3e-0b8756773edf",
+  Author = "Jasper Murrell",
+  Description = "A scalable Press and Hold component that outputs Boolean signals"
+}
+
+-- Define the color of the plugin object in the design
+function GetColor(props)
+  return { 204, 204, 204 }
+end
+
+-- The name that will initially display when dragged into a design
+function GetPrettyName(props)
+  return "Press and Hold v" .. PluginInfo.Version
+end
+
+-- Define User configurable Properties of the plugin
+function GetProperties()
+  local props = {
+    {
+      Name = "Count",
+      Type = "integer",
+      Min = 2,
+      Max = 64,
+      Value = 2
+    }
+  }
+  return props
+end
+
+-- function getSize(props)
+--   local size = props['Count'].Value
+--   return size 
+-- end
+
+-- Defines the Controls used within the plugin
+function GetControls(props)
+  local ctrls = {
+    {
+      Name = "Button",
+      Count = props['Count'].Value,
+      ControlType = "Button",
+      ButtonType = "Momentary",
+      UserPin = false
+    },
+    {
+      Name = "Short",
+      Count = props['Count'].Value,
+      ControlType = "Indicator",
+      IndicatorType = "LED",
+      PinStyle = "Output",
+      UserPin = true,
+    },
+    {
+      Name = "Long",
+      Count= props['Count'].Value,
+      ControlType = "Indicator",
+      IndicatorType = "LED",
+      PinStyle = "Output",
+      UserPin = true,
+    },
+    {
+      Name = "HoldTime",
+      ControlType = "Knob",
+      ControlUnit = "Seconds",
+      Min = 1,
+      Max = 5,
+      UserPin = false
+    }
+
+  }
+  return ctrls
+end
+
+-- Layout of controls and graphics for the plugin UI to display
+function GetControlLayout(props)
+  local layout = {
+    ['Button'] = {
+      Position = {85, 5},
+      Size = {36,16},
+    },
+    ['Short'] = {
+      Position = {95, 20},
+      Size = {16,16}
+    },
+    ['Long'] = {
+      Position = {95, 35},
+      Size = {16,16}
+    },
+    ['HoldTime'] = {
+      Position = {85, 50},
+      Size = {36,16}
+    }
+  };
+  local graphics = {
+    {
+      Type = 'Label',
+      Text = 'Input',
+      TextSize = 10,
+      HTextAlign = 'Left',
+      VTextAlign = 'Center',
+      Size = {80,13},
+      Color = {51, 51, 51},
+      Position = {4,5}
+    },
+    {
+      Type = 'Label',
+      Text = 'Short',
+      TextSize = 10,
+      HTextAlign = 'Left',
+      VTextAlign = 'Center',
+      Size = {80,13},
+      Color = {51, 51, 51},
+      Position = {4,20}
+    },
+    {
+      Type = 'Label',
+      Text = 'Long',
+      TextSize = 10,
+      HTextAlign = 'Left',
+      VTextAlign = 'Center',
+      Size = {80,13},
+      Color = {51, 51, 51},
+      Position = {4,35}
+    },
+    {
+      Type = 'Label',
+      Text = 'Hold Time',
+      TextSize = 10,
+      HTextAlign = 'Left',
+      VTextAlign = 'Center',
+      Size = {80,13},
+      Color = {51, 51, 51},
+      Position = {4,50}
+    }
+  };
+
+
+  for i = 1, props['Count'].Value do 
+    layout['Button '..i] = {
+      Position = {(85 - 36) + (i*36), 5 },
+      Size = {36,16},
+    }
+    layout['Short '..i] = {
+      Position = { (95-36) + (i*36), 20},
+      Size = {16,16},
+    }
+    layout['Long '..i] = {
+      Position = {(95-36) + (i*36), 35},
+      Size = {16,16},
+    }
+  end
+
+  return layout, graphics
+end
+
+--Start event based logic
+if Controls then
+  holdTime = Controls.HoldTime.Value
+  currentTime = 0
+  
+  
+  timer = Timer.New()
+  timer.EventHandler = function()
+    currentTime = currentTime + 1
+  end 
+  
+
+  for i = 1, #Controls.Button do
+    Controls.Button[i].EventHandler = function()
+      if Controls.Button[i].Boolean then 
+        currentTime = 0
+        timer:Start(1)
+      else 
+        timer:Stop()
+        checkPress(i)
+      end 
+    end 
+  end
+  
+  function checkPress(x)
+    if currentTime >= holdTime then 
+      longPulse(x)
+    else 
+      shortPulse(x)
+    end 
+  end 
+  
+  function shortPulse(outputNumber)
+    Controls.Short[outputNumber].Boolean = true 
+    Timer.CallAfter(function()
+      Controls.Short[outputNumber].Boolean = false 
+    end, 1)
+  end 
+  
+  function longPulse(outputNumber)
+    Controls.Long[outputNumber].Boolean = true 
+    Timer.CallAfter(function()
+      Controls.Long[outputNumber].Boolean = false 
+    end, 1)
+  end 
+  
+  
+end
