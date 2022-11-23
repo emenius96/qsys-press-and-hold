@@ -139,7 +139,6 @@ function GetControlLayout(props)
     }
   };
 
-
   for i = 1, props['Count'].Value do 
     layout['Button '..i] = {
       Position = {(85 - 36) + (i*36), 5 },
@@ -162,7 +161,6 @@ end
 if Controls then
   holdTime = Controls.HoldTime.Value
   currentTime = 0
-  
   
   timer = Timer.New()
   timer.EventHandler = function()
